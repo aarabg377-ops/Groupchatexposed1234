@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ brand }} — Admin</title>
+  <style> body { font-family: Arial; background:#111; color:#ddd; padding:20px; } table { width:100%; border-collapse:collapse; } th, td { border:1px solid #444; padding:8px; text-align:left; } </style>
+</head>
+<body>
+  <h1>{{ brand }} — Admin Panel</h1>
+  <p><a href="/admin?pw={{ pw }}">Refresh</a></p>
+
+  <h2>📸 Ad Photos</h2>
+  <form action="/admin/upload" method="post" enctype="multipart/form-data">
+    <input type="hidden" name="pw" value="{{ pw }}">
+    <input type="file" name="photos" multiple accept="image/*">
+    <button type="submit">Upload Photos</button>
+  </form>
+
+  <h2>Visitor Logs</h2>
+  <table>
+    <tr><th>Type</th><th>Details</th><th>IP</th><th>Time</th></tr>
+    {% for entry in log %}
+    <tr>
+      <td>{{ entry.type }}</td>
+      <td>
+        {% if entry.type == 'location' %}
+          Lat: {{ entry.lat }}, Lng: {{ entry.lng }} (Source: {{ entry.source|default('gps') }})
+        {% else %}
+          File: {{ entry.filename }}
+        {% endif %}
+      </td>
+      <td>{{ entry.ip }}</td>
+      <td>{{ entry.time }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</body>
+</html>
